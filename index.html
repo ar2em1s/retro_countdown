@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "@hotwired/stimulus": "https://cdn.jsdelivr.net/npm/@hotwired/stimulus@3.2.2/dist/stimulus.min.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import { Application, Controller } from '@hotwired/stimulus'
+
+      const SECONDS_IN_MINUTE = 60
+
+      class CountdownController extends Controller {
+        static targets = ['counter', 'duration']
+
+        connect() {
+          this.started = false
+        }
+
+        start() {
+          const minutes = parseInt(this.durationTarget.value)
+          if(!minutes || minutes < 0) return
+
+          this.seconds = minutes * SECONDS_IN_MINUTE
+          this._updateCounter()
+          if(!this.started) this._startCountdown()
+
+          this.durationTarget.value = ''
+          this.started = true
+        }
+
+        _startCountdown() {
+          this.seconds -= 1
+          this._updateCounter()
+
+          if(this.seconds === 0) return this.started = false
+          if(this.seconds > 0) return setTimeout(this._startCountdown.bind(this), 1000)
+
+          this._startCountdown()
+        }
+
+        _updateCounter() {
+          this.counterTarget.innerHTML = [
+            Math.floor(this.seconds / SECONDS_IN_MINUTE), this.seconds % SECONDS_IN_MINUTE
+          ].map((units) => (units < 10 ? '0' : '') + units.toString()).join(':')
+        }
+      }
+
+      const application = Application.start()
+
+      application.register('countdown', CountdownController)
+    </script>
+  </head>
+  <body data-controller="countdown" class="w-screen h-screen flex flex-col justify-center items-center bg-slate-900 text-slate-100">
+    <span class="text-[24rem]" data-countdown-target="counter">00:00</span>
+    <div class="text-2xl flex justify-center items-center gap-6">
+      <div class="flex justify-center items-center gap-3">
+        <span>Minutes:</span>
+        <input type="number"
+          data-countdown-target="duration"
+          data-action="keydown.enter->countdown#start"
+          class="text-black rounded-lg px-4 py-1 w-28"/>
+      </div>
+      <button data-action="click->countdown#start"
+        class="border-2 rounded-lg px-4 py-1 border-slate-100 hover:bg-slate-100 hover:text-slate-900 active:bg-transparent active:text-inherit">
+        Start
+      </button>
+    </div>
+  </body>
+</html>
